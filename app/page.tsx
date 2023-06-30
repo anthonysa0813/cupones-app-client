@@ -25,8 +25,8 @@ const HomePage = () => {
   const notifyWarning = () => toast.error("Existe un campo vacío");
   const [isLoading, setIsLoading] = useState(false);
   const [steps, setSteps] = useState(false);
-  const [width, setWidth] = useState(window.innerWidth);
-  const [height, setHeight] = useState(window.innerHeight);
+  const [width, setWidth] = useState(0);
+  const [height, setHeight] = useState(0);
 
   useEffect(() => {
     const handleResize = () => {
@@ -34,10 +34,16 @@ const HomePage = () => {
       setHeight(window.innerHeight);
     };
 
-    window.addEventListener("resize", handleResize);
+    if (typeof window !== "undefined") {
+      setWidth(window.innerWidth);
+      setHeight(window.innerHeight);
+      window.addEventListener("resize", handleResize);
+    }
 
     return () => {
-      window.removeEventListener("resize", handleResize);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("resize", handleResize);
+      }
     };
   }, []);
 
