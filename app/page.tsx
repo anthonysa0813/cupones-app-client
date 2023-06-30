@@ -4,6 +4,10 @@ import Image from "next/image";
 import logo from "../public/logo.png";
 import toast, { Toaster } from "react-hot-toast";
 import { saveRegisterCoupon } from "./utils/apis";
+import Loader from "./components/Loader";
+import Modal from "./components/Modal";
+import Confetti from "react-confetti";
+// import useWindowSize from "react-use/lib/useWindowSize";
 
 interface FormI {
   name: string;
@@ -19,11 +23,29 @@ interface FormI {
 const HomePage = () => {
   const [form, setForm] = useState<FormI>({} as FormI);
   const notifyWarning = () => toast.error("Existe un campo vacío");
+  const [isLoading, setIsLoading] = useState(false);
+  const [steps, setSteps] = useState(false);
+  const [width, setWidth] = useState(window.innerWidth);
+  const [height, setHeight] = useState(window.innerHeight);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWidth(window.innerWidth);
+      setHeight(window.innerHeight);
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
   const {
     cuopon,
     email,
-    lastName,
     name,
+    lastName,
     numberDocument,
     phone,
     store,
@@ -37,10 +59,6 @@ const HomePage = () => {
       [e.target.name]: e.target.value,
     });
   };
-
-  // useEffect(() => {
-  //   console.log(form);
-  // }, [form]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -60,177 +78,225 @@ const HomePage = () => {
       notifyWarning();
       return;
     }
-    const result = await saveRegisterCoupon(form);
+    setIsLoading(true);
+    saveRegisterCoupon(form).then((res) => {
+      if (res.message == "User created") {
+        setIsLoading(false);
+        setSteps(true);
+      }
+    });
   };
 
   return (
-    <div className="flex justify-center items-center h-screen">
-      <div>
-        <Toaster />
-      </div>
-      <form className="p-10 rounded-2xl bg-white" onSubmit={handleSubmit}>
-        <h1 className="text-4xl font-bold text-center mb-10">
-          Registra tu cupón
-        </h1>
-        <div className="grid gap-6 mb-6 md:grid-cols-2">
-          <div>
-            <label
-              htmlFor="first_name"
-              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-            >
-              Nombres
-            </label>
-            <input
-              type="text"
-              id="first_name"
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-              placeholder="John"
-              name="name"
-              // required
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="last_name"
-              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-            >
-              Apellidos
-            </label>
-            <input
-              type="text"
-              id="last_name"
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-              placeholder="Vargas"
-              name="lastName"
-              required
-              onChange={handleChange}
-            />
-          </div>
+    <>
+      <div className="flex items-center justify-center h-screen">
+        <div>
+          <Toaster />
+        </div>
+        {isLoading && (
+          <Modal>
+            <Loader />
+          </Modal>
+        )}
+        {steps && (
+          <>
+            <Confetti width={width} height={height} />
 
-          <div>
+            <Modal>
+              <div className="flex flex-col items-center justify-center w-1/2 text-center">
+                <div className="h-80">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    className="w-full text-green-500"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <h1 className="text-3xl text-blue-700">
+                  Felicidades, se registró correctamente el cupón
+                </h1>
+              </div>
+            </Modal>
+          </>
+        )}
+
+        <form className={`p-10 bg-white rounded-2xl `} onSubmit={handleSubmit}>
+          <h1 className="mb-10 text-4xl font-bold text-center">
+            Registra tu cupón
+          </h1>
+
+          <div className="grid gap-6 mb-6 md:grid-cols-2">
+            <div>
+              <label
+                htmlFor="first_name"
+                className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+              >
+                Nombres
+              </label>
+              <input
+                type="text"
+                id="first_name"
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                placeholder="John"
+                name="name"
+                // required
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="last_name"
+                className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+              >
+                Apellidos
+              </label>
+              <input
+                type="text"
+                id="last_name"
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                placeholder="Vargas"
+                name="lastName"
+                required
+                onChange={handleChange}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="phone"
+                className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+              >
+                Número de Teléfono
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                placeholder="123-45-678"
+                name="phone"
+                required
+                onChange={handleChange}
+              />
+            </div>
+            <div className="">
+              <label
+                htmlFor="typeDocument"
+                className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+              >
+                Seleccione el tipo de documento
+              </label>
+              <select
+                id="typeDocument"
+                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                name="typeDocument"
+                onChange={handleChange}
+              >
+                <option value="">Seleccione el tipo de documento</option>
+                <option value="DNI">DNI</option>
+                <option value="C.EXTRANJERIA">C.Extranjeria</option>
+                <option value="PASAPORTE">Pasaporte</option>
+              </select>
+            </div>
+          </div>
+          <div className="mb-6">
             <label
-              htmlFor="phone"
+              htmlFor="numberDocument"
               className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
             >
-              Número de Teléfono
+              Número de documento
             </label>
             <input
               type="tel"
-              id="phone"
+              id="numberDocument"
               className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-              placeholder="123-45-678"
-              name="phone"
+              placeholder="12212211"
+              name="numberDocument"
               required
               onChange={handleChange}
             />
           </div>
-          <div className="">
+          <div className="mb-6">
             <label
-              htmlFor="typeDocument"
+              htmlFor="store"
               className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
             >
-              Seleccione el tipo de documento
+              Selecciona la tienda
             </label>
             <select
-              id="typeDocument"
+              id="store"
               className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-              name="typeDocument"
+              name="store"
               onChange={handleChange}
             >
-              <option value="DNI">DNI</option>
-              <option value="C.EXTRANJERIA">C.Extranjeria</option>
-              <option value="PASAPORTE">Pasaporte</option>
+              <option value="">Seleccione la tienda</option>
+              <option value="">Seleccione una tienda</option>
+              <option value="tienda 1">Tienda 1</option>
+              <option value="tienda 2">Tienda 2</option>
+              <option value="tienda 3">Tienda 3</option>
+              <option value="tienda 4">Tienda 4</option>
+              <option value="tienda 5">Tienda 5</option>
+              <option value="eduardo">Tienda eduardo</option>
             </select>
           </div>
-        </div>
-        <div className="mb-6">
-          <label
-            htmlFor="numberDocument"
-            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-          >
-            Número de documento
-          </label>
-          <input
-            type="tel"
-            id="numberDocument"
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            placeholder="12212211"
-            name="numberDocument"
-            required
-            onChange={handleChange}
-          />
-        </div>
-        <div className="mb-6">
-          <label
-            htmlFor="store"
-            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-          >
-            Selecciona la tienda
-          </label>
-          <select
-            id="store"
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            name="store"
-            onChange={handleChange}
-          >
-            <option value="tienda 1">Tienda 1</option>
-            <option value="tienda 2">Tienda 2</option>
-            <option value="tienda 3">Tienda 3</option>
-            <option value="tienda 4">Tienda 4</option>
-            <option value="tienda 5">Tienda 5</option>
-          </select>
-        </div>
-        <div className="mb-6">
-          <label
-            htmlFor="email"
-            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-          >
-            Email address
-          </label>
-          <input
-            type="email"
-            id="email"
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            placeholder="example@gmail.com"
-            required
-            name="email"
-            onChange={handleChange}
-          />
-        </div>
-        <div className="mb-6">
-          <label
-            htmlFor="cuopon"
-            className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-          >
-            Cupón
-          </label>
-          <input
-            type="text"
-            id="cuopon"
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 border-sky-500"
-            required
-            name="cuopon"
-            onChange={handleChange}
-          />
-        </div>
-        <div className="flex justify-between">
-          <button
-            type="submit"
-            className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-          >
-            Submit
-          </button>
-          <Image
-            src={logo}
-            alt={"Logo de CrediVargas"}
-            height={100}
-            width={150}
-            className=""
-          />
-        </div>
-      </form>
-    </div>
+          <div className="mb-6">
+            <label
+              htmlFor="email"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >
+              Email address
+            </label>
+            <input
+              type="email"
+              id="email"
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              placeholder="example@gmail.com"
+              required
+              name="email"
+              onChange={handleChange}
+            />
+          </div>
+          <div className="mb-6">
+            <label
+              htmlFor="cuopon"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >
+              Cupón
+            </label>
+            <input
+              type="text"
+              id="cuopon"
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 border-sky-500"
+              required
+              name="cuopon"
+              onChange={handleChange}
+            />
+          </div>
+          <div className="flex justify-between">
+            <button
+              type="submit"
+              className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+            >
+              Regístrate
+            </button>
+            <Image
+              src={logo}
+              alt={"Logo de CrediVargas"}
+              height={100}
+              width={150}
+              className=""
+            />
+          </div>
+        </form>
+      </div>
+    </>
   );
 };
 
